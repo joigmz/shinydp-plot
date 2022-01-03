@@ -1,25 +1,100 @@
 # example from http://shiny.rstudio.com/gallery/kmeans-example.html
 
 library(shiny)
+library(ggplot2)
+library(dplyr)
+library(data.table)
 
-palette(c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#FFFF33", "#A65628", "#F781BF", "#999999"))
+
+data <- fread("/Users/joseizammontt/Desktop/Universidad/master/thesis/codigo/DATA_UNV_2.csv", header=TRUE, stringsAsFactors=FALSE)
+data <- data[F_UNIDADESVENTA>0.000001,]
+data <- data[,WEEK:=strftime(as.POSIXlt(data$ID_DIAANALISIS, format = "%Y-%d-%m"), "%W")]
+data <- data[,.(WEEK,DESC_LOCALFISICO,CLASE,COD_SKU,DESC_SKU,F_UNIDADESVENTA,F_MONTOVENTA,F_COSTOVENTA)]
 
 # Define server logic required to generate and plot a random distribution
-shinyServer(function(input, output, session) {
-
-  # Combine the selected variables into a new data frame
-  selectedData <- reactive({
-    iris[, c(input$xcol, input$ycol)]
+shinyServer(function(input, output) {
+  
+  output$distPlot <- renderPlot({
+    
+    data.grafico1 <-data[DESC_LOCALFISICO==input$selectInput2 & CLASE==input$selectInput1,]
+    data.grafico1 <- data.grafico1[,.(MONTOVENTAS = sum(F_MONTOVENTA), DEMANDA = sum(F_UNIDADESVENTA)), keyby = .(WEEK,DESC_LOCALFISICO,CLASE,COD_SKU,DESC_SKU)]
+    data.grafico1 <- data.grafico1[,PRECIOPROMEDIO:=data.grafico1$MONTOVENTAS/data.grafico1$DEMANDA]
+    data.grafico1 <- data.grafico1[DESC_SKU==input$selectInput3,]
+    
+    x <- data.grafico1$WEEK
+    y1 <- data.grafico1$PRECIOPROMEDIO
+    y2 <- data.grafico1$DEMANDA
+    
+    p <- ggplot(data.grafico1, aes(x = x, group = 1))
+    p <- p + geom_line(aes(y = y1, colour = "Precio"))
+    
+    # adding the relative humidity data, transformed to match roughly the range of the temperature
+    p <- p + geom_line(aes(y = y2, colour = "Demanda"))
+    
+    # now adding the secondary axis, following the example in the help file ?scale_y_continuous
+    # and, very important, reverting the above transformation
+    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*1, name = "Precio"))
+    
+    # modifying colours and theme options
+    p <- p + scale_colour_manual(values = c("blue", "red"))
+    p <- p + labs(y = "Demanda",
+                  x = "Week",
+                  colour = "Curvas")
+    p <- p + theme(legend.position = c(0.85, 0.2))
+    p
+    
   })
-
-  clusters <- reactive({
-    kmeans(selectedData(), input$clusters)
+  
+  output$distPlot2 <- renderPlot({
+    
+    data.grafico2 <-data[DESC_LOCALFISICO==input$selectInput2 & CLASE==input$selectInput1,]
+    data.grafico2 <- data.grafico2[DESC_SKU==input$selectInput3,]
+    data.grafico2 <- data.grafico2[,PRECIOVENTA:=data.grafico2$F_MONTOVENTA/data.grafico2$F_UNIDADESVENTA]
+    
+    p2 <- ggplot(data.grafico2, aes(x=WEEK, y=PRECIOVENTA)) + 
+      geom_boxplot()
+    p2
   })
-
-  output$plot1 <- renderPlot({
-    par(mar=c(5.1, 4.1, 0, 1))
-    plot(selectedData(), col=clusters()$cluster, pch=20, cex=3)
-    points(clusters()$centers, pch=4, cex=4, lwd=4)
+  
+  output$distPlot3 <- renderPlot({
+    
+    data.grafico3 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DESC_LOCALFISICO)]
+    data.grafico3 <- setorder(data.grafico3,-MONTOVENTAS)
+    
+    data.grafico3 <- data.grafico3[1:input$selectInput4,]
+    
+    ggplot(data.grafico3, aes(x = reorder(DESC_LOCALFISICO, MONTOVENTAS), y = MONTOVENTAS)) +
+      geom_bar(stat = "identity",
+               show.legend = FALSE,
+               fill= "lightblue",
+               color = "white") +
+      geom_text(aes(label = round(MONTOVENTAS, 0),
+                    hjust = 1,
+                    vjust = 0.5),
+                size = 10)+
+      xlab("LOCAL") +
+      ylab("MONTOVENTAS") +
+      coord_flip()
   })
-
+  
+  output$distPlot4 <- renderPlot({
+    
+    data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(CLASE)]
+    data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+    
+    data.grafico4 <- data.grafico4[1:input$selectInput5,]
+    
+    ggplot(data.grafico4, aes(x = reorder(CLASE, MONTOVENTAS), y = MONTOVENTAS)) +
+      geom_bar(stat = "identity",
+               show.legend = FALSE,
+               fill= "lightblue",
+               color = "white") +
+      geom_text(aes(label = round(MONTOVENTAS, 0),
+                    hjust = 1,
+                    vjust = 0.5),
+                size = 5)+
+      xlab("CLASE") +
+      ylab("MONTOVENTAS") +
+      coord_flip()
+  })
 })
