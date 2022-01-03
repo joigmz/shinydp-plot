@@ -71,7 +71,7 @@ shinyServer(function(input, output) {
       geom_text(aes(label = round(MONTOVENTAS, 0),
                     hjust = 1,
                     vjust = 0.5),
-                size = 10)+
+                size = 5)+
       xlab("LOCAL") +
       ylab("MONTOVENTAS") +
       coord_flip()
