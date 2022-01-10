@@ -9,7 +9,7 @@ library(scales)
 data <- fread("/Users/joseizammontt/Desktop/Universidad/master/thesis/codigo/DATA_UNV_2.csv", header=TRUE, stringsAsFactors=FALSE)
 data <- data[F_UNIDADESVENTA>0.000001,]
 data <- data[,WEEK:=strftime(as.POSIXlt(data$ID_DIAANALISIS, format = "%Y-%d-%m"), "%W")]
-data <- data[,.(WEEK,DESC_LOCALFISICO,CLASE,COD_SKU,DESC_SKU,F_UNIDADESVENTA,F_MONTOVENTA,F_COSTOVENTA)]
+data <- data[,.(WEEK,DESC_LOCALFISICO,COD_ZONAL,DIVISION,DEPARTAMENTO,SUBDEPARTAMENTO,CLASE,SUBCLASE,COD_SKU,DESC_SKU,F_UNIDADESVENTA,F_MONTOVENTA,F_COSTOVENTA)]
 
 # Define server logic required to generate and plot a random distribution
 shinyServer(function(input, output) {
@@ -25,7 +25,6 @@ shinyServer(function(input, output) {
     y1 <- data.grafico1$PRECIOPROMEDIO
     y2 <- data.grafico1$DEMANDA
     
-    View(data.grafico1)
     p <- ggplot(data.grafico1, aes(x = x, group = 1))
     p <- p + geom_line(aes(y = y1*mean(y2)/mean(y1), colour = "Precio"))
 
@@ -59,7 +58,25 @@ shinyServer(function(input, output) {
   })
   
   output$distPlot3 <- renderPlot({
+    if (input$qzonal=="Si"){
+    data.grafico3 <- data[COD_ZONAL == input$cod_zonal,]
+    data.grafico3 <- data.grafico3[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DESC_LOCALFISICO)]
+    data.grafico3 <- setorder(data.grafico3,-MONTOVENTAS)
     
+    ggplot(data.grafico3, aes(x = reorder(DESC_LOCALFISICO, MONTOVENTAS), y = MONTOVENTAS)) +
+      geom_bar(stat = "identity",
+               show.legend = FALSE,
+               fill= "lightblue",
+               color = "white") +
+      geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                    hjust = 0,
+                    vjust = 0.5),
+                size = 5)+
+      xlab("LOCAL") +
+      ylab("MONTOVENTAS") +
+      coord_flip()+
+      scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico3$MONTOVENTAS)*1.3))
+    } else {
     data.grafico3 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DESC_LOCALFISICO)]
     data.grafico3 <- setorder(data.grafico3,-MONTOVENTAS)
     
@@ -71,40 +88,114 @@ shinyServer(function(input, output) {
                fill= "lightblue",
                color = "white") +
       geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
-                    hjust = 1,
+                    hjust = 0,
                     vjust = 0.5),
                 size = 5)+
       xlab("LOCAL") +
       ylab("MONTOVENTAS") +
       coord_flip()+
-      scale_y_continuous(labels=scales::dollar_format())
+      scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico3$MONTOVENTAS)*1.3))
+    }
   })
   
   output$distPlot4 <- renderPlot({
-    
-    data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(CLASE)]
-    data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
-    
-    data.grafico4 <- data.grafico4[1:input$selectInput5,]
-    
-    ggplot(data.grafico4, aes(x = reorder(CLASE, MONTOVENTAS), y = MONTOVENTAS)) +
-      geom_bar(stat = "identity",
-               show.legend = FALSE,
-               fill= "lightblue",
-               color = "white") +
-      geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
-                    hjust = 1,
-                    vjust = 0.5),
-                size = 5)+
-      xlab("CLASE") +
-      ylab("MONTOVENTAS") +
-      coord_flip()+
-      scale_y_continuous(labels=scales::dollar_format())
+    if(input$selectInput5=="DIVISION") { 
+      data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DIVISION)]
+      data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+
+      ggplot(data.grafico4, aes(x = reorder(DIVISION, MONTOVENTAS), y = MONTOVENTAS)) +
+        geom_bar(stat = "identity",
+                 show.legend = FALSE,
+                 fill= "lightblue",
+                 color = "white") +
+        geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                      hjust = 0,
+                      vjust = 0.5),
+                  size = 5)+
+        xlab("DIVISION") +
+        ylab("MONTOVENTAS") +
+        coord_flip()+
+        scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico4$MONTOVENTAS)*1.3))
+    }
+    else if(input$selectInput5=="DEPARTAMENTO"){
+      data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DEPARTAMENTO)]
+      data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+
+      ggplot(data.grafico4, aes(x = reorder(DEPARTAMENTO, MONTOVENTAS), y = MONTOVENTAS)) +
+        geom_bar(stat = "identity",
+                 show.legend = FALSE,
+                 fill= "lightblue",
+                 color = "white") +
+        geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                      hjust = 0,
+                      vjust = 0.5),
+                  size = 5)+
+        xlab("DEPARTAMENTO") +
+        ylab("MONTOVENTAS") +
+        coord_flip()+
+        scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico4$MONTOVENTAS)*1.3))
+    }
+    else if(input$selectInput5=="SUBDEPARTAMENTO"){
+      data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(SUBDEPARTAMENTO)]
+      data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+
+      ggplot(data.grafico4, aes(x = reorder(SUBDEPARTAMENTO, MONTOVENTAS), y = MONTOVENTAS)) +
+        geom_bar(stat = "identity",
+                 show.legend = FALSE,
+                 fill= "lightblue",
+                 color = "white") +
+        geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                      hjust = 0,
+                      vjust = 0.5),
+                  size = 5)+
+        xlab("SUBDEPARTAMENTO") +
+        ylab("MONTOVENTAS") +
+        coord_flip()+
+        scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico4$MONTOVENTAS)*1.3))
+    }
+    else if(input$selectInput5=="CLASE"){
+      data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(CLASE)]
+      data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+      data.grafico4 <- data.grafico4[1:input$selectInput6,]
+      
+      ggplot(data.grafico4, aes(x = reorder(CLASE, MONTOVENTAS), y = MONTOVENTAS)) +
+        geom_bar(stat = "identity",
+                 show.legend = FALSE,
+                 fill= "lightblue",
+                 color = "white") +
+        geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                      hjust = 0,
+                      vjust = 0.5),
+                  size = 5)+
+        xlab("CLASE") +
+        ylab("MONTOVENTAS") +
+        coord_flip()+
+        scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico4$MONTOVENTAS)*1.3))
+    }
+    else if(input$selectInput5=="SUBCLASE"){
+      data.grafico4 <- data[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(SUBCLASE)]
+      data.grafico4 <- setorder(data.grafico4,-MONTOVENTAS)
+      data.grafico4 <- data.grafico4[1:input$selectInput6,]
+      
+      ggplot(data.grafico4, aes(x = reorder(SUBCLASE, MONTOVENTAS), y = MONTOVENTAS)) +
+        geom_bar(stat = "identity",
+                 show.legend = FALSE,
+                 fill= "lightblue",
+                 color = "white") +
+        geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                      hjust = 0,
+                      vjust = 0.5),
+                  size = 5)+
+        xlab("SUBCLASE") +
+        ylab("MONTOVENTAS") +
+        coord_flip()+
+        scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico4$MONTOVENTAS)*1.3))
+    }
   })
   
   output$distPlot5 <- renderPlot({
     
-    data.grafico5 <- data[DESC_LOCALFISICO=="La Marina" & CLASE=="J03010421 - POLLO ENTERO",]
+    data.grafico5 <- data[DESC_LOCALFISICO==input$selectInput7 & CLASE==input$selectInput8,]
     data.grafico5 <- data.grafico5[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DESC_SKU)]
     data.grafico5 <- setorder(data.grafico5,-MONTOVENTAS)
     
@@ -114,12 +205,12 @@ shinyServer(function(input, output) {
                fill= "lightblue",
                color = "white") +
       geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
-                    hjust = 1,
+                    hjust = 0,
                     vjust = 0.5),
                 size = 5)+
       xlab("DESC_SKU") +
       ylab("MONTOVENTAS") +
       coord_flip()+
-      scale_y_continuous(labels=scales::dollar_format())
+      scale_y_continuous(labels=scales::dollar_format(), limits = c(0, max(data.grafico5$MONTOVENTAS)*1.3))
   })
 })
