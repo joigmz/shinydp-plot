@@ -25,15 +25,16 @@ shinyServer(function(input, output) {
     y1 <- data.grafico1$PRECIOPROMEDIO
     y2 <- data.grafico1$DEMANDA
     
+    View(data.grafico1)
     p <- ggplot(data.grafico1, aes(x = x, group = 1))
-    p <- p + geom_line(aes(y = y1, colour = "Precio"))
+    p <- p + geom_line(aes(y = y1*mean(y2)/mean(y1), colour = "Precio"))
 
         # adding the relative humidity data, transformed to match roughly the range of the temperature
     p <- p + geom_line(aes(y = y2, colour = "Demanda"))
     
     # now adding the secondary axis, following the example in the help file ?scale_y_continuous
     # and, very important, reverting the above transformation
-    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*1, name = "Precio",labels=scales::dollar_format()))
+    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*mean(y1)/mean(y2), name = "Precio",labels=scales::dollar_format()))
     
     # modifying colours and theme options
     p <- p + scale_colour_manual(values = c("blue", "red"))

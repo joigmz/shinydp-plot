@@ -24,13 +24,16 @@ fluidPage(theme = shinytheme("united"),
                   
                   # Input: Slider for the number of bins ----
                   selectInput("selectInput1",
-                              "Selecionar categoria:",choices = unique(data$CLASE)
+                              "Selecionar categoria:",choices = unique(data$CLASE), 
+                              selected = "J03010421 - POLLO ENTERO"
                               ),
                   selectInput("selectInput2",
-                              "Selecionar local:",choices = unique(data$DESC_LOCALFISICO)
+                              "Selecionar local:",choices = unique(data$DESC_LOCALFISICO),
+                              selected = "La Marina"
                   ),
                   selectInput("selectInput3",
-                              "Selecionar DESC_SKU:",choices = unique(data$DESC_SKU)
+                              "Selecionar DESC_SKU:",choices = unique(data$DESC_SKU),
+                              selected = "POLLO FRESCO TTN GR X KG"
                   )
                   
                 ),
