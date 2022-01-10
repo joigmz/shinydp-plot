@@ -12,7 +12,9 @@ data <- data[,WEEK:=strftime(as.POSIXlt(data$ID_DIAANALISIS, format = "%Y-%d-%m"
 data <- data[,.(WEEK,DESC_LOCALFISICO,CLASE,COD_SKU,DESC_SKU,F_UNIDADESVENTA,F_MONTOVENTA,F_COSTOVENTA)]
 
 fluidPage(theme = shinytheme("united"),
-          navbarPage("Tottus Dashboard:",
+          navbarPage("Tottus Dashboard",
+           tags$head(tags$style(HTML('.navbar-static-top {background-color: green; border-color: green;}',
+                                     '.navbar-default .navbar-nav>.active>a {background-color: green;}'))),
             tabPanel("Gráfico",
               # Sidebar layout with input and output definitions ----
               sidebarLayout(
@@ -52,8 +54,8 @@ fluidPage(theme = shinytheme("united"),
                          
                          # Input: Slider for the number of bins ----
                          selectInput("selectInput4",
-                                     "Top:",choices = seq(1:84)
-
+                                     "Top:",choices = seq(1:84),
+                                     selected =20
                          )
                        ),
                        
@@ -76,8 +78,8 @@ fluidPage(theme = shinytheme("united"),
                          
                          # Input: Slider for the number of bins ----
                          selectInput("selectInput5",
-                                     "Top:",choices = seq(1:79)
-                                     
+                                     "Top:",choices = seq(1:79),
+                                     selected =20
                          )
                        ),
                        
@@ -85,6 +87,29 @@ fluidPage(theme = shinytheme("united"),
                        mainPanel(
                          # Output
                          plotOutput(outputId = "distPlot4")
+                         
+                       )
+                       
+                     )
+            ),
+            tabPanel("Detalle", 
+                     titlePanel("Detalle Ventas"),
+                     
+                     sidebarLayout(
+                       
+                       # Sidebar panel for inputs ----
+                       sidebarPanel(
+                         selectInput("selectInput6",
+                                     "Local:",choices = c("La Marina")
+                                     ),
+                         selectInput("selectInput7",
+                                     "Clase:",choices = c("J03010421 - POLLO ENTERO")
+                                    )
+                       ),
+                       # Main panel for displaying outputs ----
+                       mainPanel(
+                         # Output
+                         plotOutput(outputId = "distPlot5")
                          
                        )
                        

@@ -4,7 +4,7 @@ library(shiny)
 library(ggplot2)
 library(dplyr)
 library(data.table)
-
+library(scales)
 
 data <- fread("/Users/joseizammontt/Desktop/Universidad/master/thesis/codigo/DATA_UNV_2.csv", header=TRUE, stringsAsFactors=FALSE)
 data <- data[F_UNIDADESVENTA>0.000001,]
@@ -27,13 +27,13 @@ shinyServer(function(input, output) {
     
     p <- ggplot(data.grafico1, aes(x = x, group = 1))
     p <- p + geom_line(aes(y = y1, colour = "Precio"))
-    
-    # adding the relative humidity data, transformed to match roughly the range of the temperature
+
+        # adding the relative humidity data, transformed to match roughly the range of the temperature
     p <- p + geom_line(aes(y = y2, colour = "Demanda"))
     
     # now adding the secondary axis, following the example in the help file ?scale_y_continuous
     # and, very important, reverting the above transformation
-    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*1, name = "Precio"))
+    p <- p + scale_y_continuous(sec.axis = sec_axis(~.*1, name = "Precio",labels=scales::dollar_format()))
     
     # modifying colours and theme options
     p <- p + scale_colour_manual(values = c("blue", "red"))
@@ -52,7 +52,8 @@ shinyServer(function(input, output) {
     data.grafico2 <- data.grafico2[,PRECIOVENTA:=data.grafico2$F_MONTOVENTA/data.grafico2$F_UNIDADESVENTA]
     
     p2 <- ggplot(data.grafico2, aes(x=WEEK, y=PRECIOVENTA)) + 
-      geom_boxplot()
+      geom_boxplot()+
+      scale_y_continuous(labels=scales::dollar_format())
     p2
   })
   
@@ -68,13 +69,14 @@ shinyServer(function(input, output) {
                show.legend = FALSE,
                fill= "lightblue",
                color = "white") +
-      geom_text(aes(label = round(MONTOVENTAS, 0),
+      geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
                     hjust = 1,
                     vjust = 0.5),
                 size = 5)+
       xlab("LOCAL") +
       ylab("MONTOVENTAS") +
-      coord_flip()
+      coord_flip()+
+      scale_y_continuous(labels=scales::dollar_format())
   })
   
   output$distPlot4 <- renderPlot({
@@ -89,12 +91,34 @@ shinyServer(function(input, output) {
                show.legend = FALSE,
                fill= "lightblue",
                color = "white") +
-      geom_text(aes(label = round(MONTOVENTAS, 0),
+      geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
                     hjust = 1,
                     vjust = 0.5),
                 size = 5)+
       xlab("CLASE") +
       ylab("MONTOVENTAS") +
-      coord_flip()
+      coord_flip()+
+      scale_y_continuous(labels=scales::dollar_format())
+  })
+  
+  output$distPlot5 <- renderPlot({
+    
+    data.grafico5 <- data[DESC_LOCALFISICO=="La Marina" & CLASE=="J03010421 - POLLO ENTERO",]
+    data.grafico5 <- data.grafico5[,.(MONTOVENTAS = sum(F_MONTOVENTA)), keyby = .(DESC_SKU)]
+    data.grafico5 <- setorder(data.grafico5,-MONTOVENTAS)
+    
+    ggplot(data.grafico5, aes(x = reorder(DESC_SKU, MONTOVENTAS), y = MONTOVENTAS)) +
+      geom_bar(stat = "identity",
+               show.legend = FALSE,
+               fill= "lightblue",
+               color = "white") +
+      geom_text(aes(label = dollar(round(MONTOVENTAS, 0)),
+                    hjust = 1,
+                    vjust = 0.5),
+                size = 5)+
+      xlab("DESC_SKU") +
+      ylab("MONTOVENTAS") +
+      coord_flip()+
+      scale_y_continuous(labels=scales::dollar_format())
   })
 })
