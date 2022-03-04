@@ -13,6 +13,8 @@ data <- data[F_UNIDADESVENTA>0.000001,]
 data <- data[,WEEK:=strftime(as.POSIXlt(data$ID_DIAANALISIS, format = "%Y-%d-%m"), "%W")]
 data <- data[,.(WEEK,DESC_LOCALFISICO,COD_ZONAL,DIVISION,DEPARTAMENTO,SUBDEPARTAMENTO,CLASE,SUBCLASE,COD_SKU,DESC_SKU,F_UNIDADESVENTA,F_MONTOVENTA,F_COSTOVENTA)]
 
+data_pap <- fread("data/paso_a_paso.csv", header=TRUE, stringsAsFactors=FALSE)
+
 theme_clean <- function() {
   theme_minimal(base_family = "Barlow Semi Condensed") +
     theme(panel.grid.minor = element_blank(),
@@ -319,4 +321,40 @@ shinyServer(function(input, output) {
       scale_y_continuous(labels=scales::dollar_format(prefix="S/ "), limits = c(0, max(data.grafico5$MONTOVENTAS)*1.3))+
       theme_clean()
   })
+  
+  output$cuarentena_opciones = DT::renderDataTable({
+    data_pap[codigo_region==input$cod_region,c(1:5)]
+  })
+  
+  output$lineplot_pap <- renderPlot({
+    
+    aux <-  data_pap[codigo_region==as.integer(input$cod_region2)& 
+                       region_residencia==as.character(input$region_residencia) &
+                       codigo_comuna==as.integer(input$codigo_comuna) &
+                       comuna_residencia==as.character(input$comuna_residencia) &
+                       zona==as.character(input$zona),c(6:584)]
+    
+    x <- as.Date(colnames(data_pap[codigo_region==input$cod_region2,c(6:584)]))
+    y <- t(aux[1,])[,1]
+    
+    df = data.frame(x,y)
+    p <- ggplot(df, aes(x = x, group = 1))
+    p <- p+scale_x_date(date_labels = "%Y %b %d")
+    p <- p + geom_line(aes(y = y, colour = "Etapa"))
+    
+
+    # modifying colours and theme options
+    p <- p + scale_colour_manual(values = c("blue", "red"))
+    p <- p + labs(y = "Etapa",
+                  x = " Fecha",
+                  colour = "Curva")
+    str <- paste('Variación de plan paso a paso por Fecha para comuna de',input$comuna_residencia,sep = " ")
+    p <- p + ggtitle(str)
+    p <- p + theme_clean()
+    p <- p + theme(legend.position = c(0.85, 0.2))
+    p
+  })
+  
 })
+
+
